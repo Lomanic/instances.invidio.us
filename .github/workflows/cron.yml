@@ -1,0 +1,50 @@
+name: Static Gen
+on:
+  push:
+  schedule:
+    - cron: '* * * * *'
+jobs:
+  static_gen:
+    runs-on: ubuntu-16.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: 'gh-pages'
+      - name: Install jq
+        run: |
+          command -v jq &>/dev/null || (apt update && apt install -y jq)
+      - uses: MeilCli/setup-crystal-action@v4
+        with:
+          crystal_version: 0.34.0
+          shards_version: 0.10.0
+      - name: Compile
+        run: |
+          shards install
+          crystal build src/instances.cr
+      - name: Run
+        run: |
+          ./instances &
+          while [[ "$(curl -s http://localhost:3000/instances.json | jq '. | length')" -eq 0 ]]; do sleep 1; done # give some time for the app to retrieve info
+      - name: Mirror
+        run: |
+          set -x
+          rm -rf docs
+          mkdir -p docs
+          (cd docs && wget --mirror --convert-links --adjust-extension --page-requisites --no-parent --no-host-directories http://0.0.0.0:3000) || true
+      - name: Strip GET parameters from mirror
+        run: |
+          (cd docs && rename -f -v 's/[?].*//' *[?]*) # https://stackoverflow.com/a/62645602
+          (cd docs && sed -i 's|%3F|?|g' $(grep -IrnFl "%3F"))
+      - name: List mirror
+        run: |
+          ls -lR docs
+      - name: Deploy changes to GH Pages
+        run: |
+          git config --local user.email "$(git log --format='%ae' HEAD^!)"
+          git config --local user.name "$(git log --format='%an' HEAD^!)"
+          git add -f docs
+          if ! git log -1 --oneline | grep "Deploy to GH Pages"; then
+            git commit -m "Deploy to GH Pages"
+          fi
+          git commit --amend --no-edit
+          git push --force
