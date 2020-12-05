@@ -1,0 +1,31 @@
+name: Static Gen
+# on:
+#   schedule:
+#     - cron: '* * * * *'
+on: [push]
+jobs:
+  static_gen:
+    runs-on: ubuntu-16.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install wget
+        run: |
+          command -v wget &>/dev/null || (apt update && apt install -y wget)
+      - uses: MeilCli/setup-crystal-action@v4
+        with:
+          crystal_version: 0.34.0
+          shards_version: 0.10.0
+      - name: Compile
+        run: |
+          shards install
+          crystal build src/instances.cr --release
+      - name: Run
+        run: |
+          ./instances &
+          PID=$!
+      - name: Mirror
+        run: |
+          wget --mirror --convert-links --adjust-extension --page-requisites --no-parent http://0.0.0.0:3000
+      - name: List mirror
+        run: |
+          ls -lR ./0.0.0.0:3000
