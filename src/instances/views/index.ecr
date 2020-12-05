@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="stylesheet" href="/css/base-min.css" />
+    <link rel="stylesheet" href="/css/tables-min.css" />
+    <title>Invidious Instances</title>
+    <style>
+      body {
+        margin: 40px auto;
+        max-width: 1200px;
+        padding: 0 10px;
+        font-family: Open Sans, Arial;
+        color: #454545;
+        line-height: 1.2;
+      }
+
+      code {
+        background: #f8f8f8;
+      }
+
+      a {
+        color: #0366d6;
+        text-decoration: none;
+      }
+
+      pre code {
+        overflow: auto;
+        tab-size: 4;
+        display: block;
+        padding: 0.5em;
+      }
+
+      .content {
+        overflow-x: overlay;
+      }
+
+      .pure-table {
+        width: 100%;
+      }
+
+      .right {
+        float: right;
+        text-align: right;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="header">
+      <p>
+        <span>Open an issue or a pull request to add your instance on <a href="https://github.com/iv-org/documentation/">the documentation repository</a>.</span>
+        <span class="right"><a href="/instances.json?pretty=1<% if sort_by != "users" %>&sort_by=<%= sort_by %><% end %>">JSON</a></span>
+      </p>
+    </div>
+
+    <div class="content">
+      <table class="pure-table">
+        <thead>
+          <tr>
+            <th><a href="/?sort_by=<%= sort_by == "name" ? "name-reverse" : "name" %>">name</a></th>
+            <th><a href="/?sort_by=<%= sort_by == "version" ? "version-reverse" : "version" %>">version</a></th>
+            <th><a href="/?sort_by=<%= sort_by == "type" ? "type-reverse" : "type" %>">type</a></th>
+            <th><a href="/?sort_by=<%= sort_by == "users" ? "users-reverse" : "users" %>">users</a></th>
+            <th><a href="/?sort_by=<%= sort_by == "signup" ? "signup-reverse" : "signup" %>">signup</a></th>
+            <th><a href="/?sort_by=<%= sort_by == "location" ? "location-reverse" : "location" %>">location</a></th>
+            <th><a href="/?sort_by=<%= sort_by == "health" ? "health-reverse" : "health" %>">health</a></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% instances.each_with_index do |tuple, index| %>
+            <% name, instance = tuple %>
+            <tr<% if index % 2 == 1 %> class="pure-table-odd" <% end %>>
+              <td><a href="<%= instance[:uri] %>"><%= name.size > 24 ? "#{name[0, 12]}...#{name[-9, 9]}" : name %></a></td>
+              <td><%= instance[:stats]?.try &.["software"]?.try &.["version"] || "-" %></td>
+              <td><%= instance[:type] %></td>
+              <td><%= instance[:stats]?.try &.["usage"]?.try &.["users"]["total"] || "-" %></td>
+              <td><%= instance[:stats]?.try &.["openRegistrations"]?.try { |bool| bool.as_bool ? "✔" : "❌" } || "-" %></td>
+              <td><%= instance[:flag]? ? "#{instance[:flag]} #{instance[:region]}" : "-" %></td>
+              <td><%= instance[:monitor]?.try &.["30dRatio"]["ratio"] || "-" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      <p>
+        Released under the AGPLv3. Source available <a href="https://github.com/iv-org/instances.invidio.us">here</a>.
+        <br>
+        This site is built with ❤️ using <a href="https://purecss.io/">Pure v1.0.1</a>.
+      </p>
+    </div>
+  </body>
+</html>
